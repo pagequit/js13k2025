@@ -10,21 +10,19 @@
         position: fixed;
         width: 100vw;
         height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
         background: black;
+        text-align: center;
       }
       canvas {
-        display: block;
-        width: 360px;
-        height: 740px;
-        background: grey;
+        height: 100%;
+        width: auto;
+        image-rendering: pixelated;
+        background: #131313;
       }
     </style>
   </head>
   <body>
-    <canvas></canvas>
+    <canvas id="canvas"></canvas>
     <script type="module" src="main.js"></script>
   </body>
 </html>
