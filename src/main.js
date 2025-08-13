@@ -19,15 +19,25 @@ let zzfxM=(n,f,t,e=125)=>{let l,o,z,r,g,h,x,a,u,c,d,i,m,p,G,M=0,R=[],b=[],j=[],k
 
 let buffer = zzfxM(...song);
 let node;
-let toggle = false;
-self.addEventListener("touchstart", () => {
+let pause = !!node;
+self.addEventListener("click", async () => {
   // prettier-ignore
-  zzfx(...[.7,,404,.03,.02,.07,1,1.4,1,88,,,,.8,,,,.77,.05,,169]); // Jump
-  // if ((toggle = !toggle)) {
-  //   node = zzfxP(...buffer);
-  // } else {
-  //   node.stop();
-  // }
+  // zzfx(...[,,281,.03,.09,.08,1,3.3,,,,,,,,,,.93,.02]); // ???
+  // zzfx(...[,,141,.31,.09,.08,,3.6,,54,,,.15,,5.5,,,.57,.45,.47]); // wobble
+  // zzfx(...[.7,,404,.03,.02,.07,1,1.4,1,88,,,,.8,,,,.77,.05,,169]); // jump
+
+  if ((pause = !pause)) {
+    if (!node) {
+      node = zzfxP(...buffer);
+      node.loop = true;
+    } else {
+      await zzfxX.resume();
+    }
+    console.log("playing...");
+  } else {
+    await zzfxX.suspend();
+    console.log("...paused")
+  }
 });
 
 let prev = 0;
