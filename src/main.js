@@ -39,8 +39,19 @@ function createSVG(d) {
 let playIcon = "M7 4v16l13-8z";
 let pauseIcon =
   "M6 6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zm8 0a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1z";
-let [ppButton, setPPButton] = createSVG(playIcon);
-wrap.appendChild(ppButton);
+let [ppBtn, ppBtnContent] = createSVG(playIcon);
+ppBtn.style = `
+  color: white;
+  position: absolute;
+  right: 0;
+  margin: 16px;
+  padding: 8px;
+  height: 4%;
+  width: auto;
+  border: 2px solid white;
+  border-radius: 50%;
+`;
+wrap.appendChild(ppBtn);
 
 let bgm = {
   v: 0.3,
@@ -64,7 +75,7 @@ let node;
 // zzfx(...[.7,,404,.03,.02,.07,1,1.4,1,88,,,,.8,,,,.77,.05,,169]); // jump
 
 let unPaused = !!node;
-app.addEventListener("click", async () => {
+ppBtn.addEventListener("click", () => {
   // prettier-ignore
   zzfx(...[1.7,,61,.2,,.04,3,.4,,,150,.07,.01,,,,.12,.67]);
   if ((unPaused = !unPaused)) {
@@ -72,10 +83,10 @@ app.addEventListener("click", async () => {
       node = zzfxP(...buffer);
       node.loop = true;
     } else {
-      await bgm.x.resume();
+      bgm.x.resume(); // no need to await
     }
   } else {
-    await bgm.x.suspend();
+    bgm.x.suspend(); // no need to await
   }
 });
 
@@ -90,10 +101,10 @@ let fps = 1000 / 60;
     if (!unPaused) {
       ctx.font = "24px monospace";
       ctx.fillStyle = "white";
-      ctx.fillText("Paused", 136, 360);
-      setPPButton(playIcon);
+      ctx.fillText("paused", 140, 360);
+      ppBtnContent(playIcon);
     } else {
-      setPPButton(pauseIcon);
+      ppBtnContent(pauseIcon);
     }
   }
   requestAnimationFrame(animate);
