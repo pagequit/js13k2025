@@ -108,6 +108,40 @@ app.addEventListener("contextmenu", (e) => {
 let slashOrigin = vec();
 let slashDelta = vec();
 let isSlashing = false;
+let slashIndex = 0;
+let slashParticles = [...Array(16)].map(() => ({
+  age: 0,
+  pos: vec(),
+}));
+
+let updateSlashParticles = () => {
+  if (isSlashing) {
+    let currentParticle = slashParticles[slashIndex];
+    if (currentParticle.age < 1) {
+      currentParticle.age = 1;
+      vecSet(currentParticle.pos, pointerPos);
+    }
+
+    if (++slashIndex >= 16) {
+      slashIndex = 0;
+    }
+  } else {
+    slashIndex = 0;
+  }
+
+  ctx.fillStyle = "white";
+  for (let particle of slashParticles) {
+    if (particle.age > 0) {
+      ctx.beginPath();
+      ctx.arc(particle.pos.x, particle.pos.y, 8 / particle.age, 0, 2 * Math.PI);
+      ctx.fill();
+
+      if (++particle.age > 8) {
+        particle.age = 0;
+      }
+    }
+  }
+};
 
 let handleSlash = () => {
   if (isPointerDown) {
@@ -141,12 +175,7 @@ let frame = 1000 / 60;
     }
 
     handleSlash();
-    if (isSlashing) {
-      ctx.beginPath();
-      ctx.arc(pointerPos.x, pointerPos.y, 8, 0, 2 * Math.PI);
-      ctx.fillStyle = "red";
-      ctx.fill();
-    }
+    updateSlashParticles();
   }
   requestAnimationFrame(animate);
 })(0);
