@@ -4,24 +4,18 @@ import { svg } from "./markup";
 
 app.width = 360;
 app.height = 740;
+
 let ctx = app.getContext("2d");
 ctx.imageSmoothingEnabled = false;
+
+let appRect = app.getBoundingClientRect();
 
 let playIcon = "M7 4v16l13-8z";
 let pauseIcon =
   "M6 6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zm8 0a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1z";
 let [ppBtn, ppBtnContent] = svg(playIcon);
-ppBtn.style = `
-  color: white;
-  position: absolute;
-  right: 0;
-  margin: 16px;
-  padding: 8px;
-  height: 4%;
-  width: auto;
-  border: 2px solid white;
-  border-radius: 50%;
-`;
+ppBtn.style =
+  "color:white;position:absolute;right:0;margin:16px;padding:8px;height:4%;width:auto;border:2px solid white;border-radius:50%;";
 wrap.appendChild(ppBtn);
 
 let bgm = {
@@ -48,7 +42,7 @@ let node;
 let unPaused = !!node;
 ppBtn.addEventListener("click", () => {
   // prettier-ignore
-  zzfx(...[1.7,,61,.2,,.04,3,.4,,,150,.07,.01,,,,.12,.67]);
+  zzfx(...[1.7,,61,.2,,.04,3,.4,,,150,.07,.01,,,,.12,.67]); // pause
   if ((unPaused = !unPaused)) {
     if (!node) {
       node = zzfxP(...buffer);
@@ -61,13 +55,46 @@ ppBtn.addEventListener("click", () => {
   }
 });
 
+let pointer = {
+  dwn: false,
+  pos: { x: 0, y: 0 },
+};
+
+let adjustPointer = (x, y) => {
+  // scale is based on CSS (height: 100%; width: auto;)
+  let scale = app.height / self.innerHeight;
+  pointer.pos.x = (x - appRect.x) * scale;
+  pointer.pos.y = (y - appRect.y) * scale;
+};
+
+app.addEventListener("mousedown", (e) => {
+  adjustPointer(e.clientX, e.clientY);
+  pointer.dwn = e.button === 0 ? true : pointer.dwn;
+});
+app.addEventListener("touchstart", (e) => {
+  adjustPointer(e.touches[0].clientX, e.touches[0].clientY);
+  pointer.dwn = true;
+});
+app.addEventListener("mousemove", (e) => {
+  adjustPointer(e.clientX, e.clientY);
+});
+app.addEventListener("touchmove", (e) => {
+  adjustPointer(e.touches[0].clientX, e.touches[0].clientY);
+});
+app.addEventListener("mouseup", (e) => {
+  pointer.dwn = e.button === 0 ? false : pointer.dwn;
+});
+app.addEventListener("touchend", (e) => {
+  pointer.dwn = e.touches.length === 0 ? false : pointer.dwn;
+});
+
 let prev = 0;
-let fps = 1000 / 60;
+let frame = 1000 / 60;
 (function animate(time) {
   let delta = time - prev;
-  if (delta >= fps) {
-    prev = time - (delta % fps);
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  if (delta >= frame) {
+    prev = time - (delta % frame);
+    ctx.clearRect(0, 0, app.width, app.height);
 
     if (!unPaused) {
       ctx.font = "24px monospace";
@@ -76,6 +103,13 @@ let fps = 1000 / 60;
       ppBtnContent(playIcon);
     } else {
       ppBtnContent(pauseIcon);
+    }
+
+    if (pointer.dwn) {
+      ctx.beginPath();
+      ctx.arc(pointer.pos.x, pointer.pos.y, 8, 0, 2 * Math.PI);
+      ctx.fillStyle = "red";
+      ctx.fill();
     }
   }
   requestAnimationFrame(animate);
