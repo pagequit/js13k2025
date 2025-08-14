@@ -55,25 +55,39 @@ ppBtn.addEventListener("click", () => {
   }
 });
 
-let pointer = {
-  dwn: false,
-  pos: { x: 0, y: 0 },
+let vec = (x = 0, y = 0) => ({ x, y });
+
+let vecSet = (a, b) => {
+  a.x = b.x;
+  a.y = b.y;
 };
+
+let vecMag = (v) => Math.sqrt(v.x * v.x + v.y * v.y);
+
+let vecDis = (a, b) => {
+  let dx = a.x - b.x;
+  let dy = a.y - b.y;
+
+  return Math.sqrt(dx * dx + dy * dy);
+};
+
+let isPointerDown = false;
+let pointerPos = vec();
 
 let adjustPointer = (x, y) => {
   // scale is based on CSS (height: 100%; width: auto;)
   let scale = app.height / self.innerHeight;
-  pointer.pos.x = (x - appRect.x) * scale;
-  pointer.pos.y = (y - appRect.y) * scale;
+  pointerPos.x = (x - appRect.x) * scale;
+  pointerPos.y = (y - appRect.y) * scale;
 };
 
 app.addEventListener("mousedown", (e) => {
   adjustPointer(e.clientX, e.clientY);
-  pointer.dwn = e.button === 0 ? true : pointer.dwn;
+  isPointerDown = e.button == 0 ? true : isPointerDown;
 });
 app.addEventListener("touchstart", (e) => {
   adjustPointer(e.touches[0].clientX, e.touches[0].clientY);
-  pointer.dwn = true;
+  isPointerDown = true;
 });
 app.addEventListener("mousemove", (e) => {
   adjustPointer(e.clientX, e.clientY);
@@ -82,11 +96,32 @@ app.addEventListener("touchmove", (e) => {
   adjustPointer(e.touches[0].clientX, e.touches[0].clientY);
 });
 app.addEventListener("mouseup", (e) => {
-  pointer.dwn = e.button === 0 ? false : pointer.dwn;
+  isPointerDown = e.button == 0 ? false : isPointerDown;
 });
 app.addEventListener("touchend", (e) => {
-  pointer.dwn = e.touches.length === 0 ? false : pointer.dwn;
+  isPointerDown = e.touches.length == 0 ? false : isPointerDown;
 });
+app.addEventListener("contextmenu", (e) => {
+  e.preventDefault();
+});
+
+let slashOrigin = vec();
+let slashDelta = vec();
+let isSlashing = false;
+
+let handleSlash = () => {
+  if (isPointerDown) {
+    vecSet(slashDelta, {
+      x: slashOrigin.x - pointerPos.x,
+      y: slashOrigin.y - pointerPos.y,
+    });
+    vecSet(slashOrigin, pointerPos);
+
+    isSlashing = vecMag(slashDelta) > 8; // "slash dead zone"
+  } else {
+    isSlashing = false;
+  }
+};
 
 let prev = 0;
 let frame = 1000 / 60;
@@ -105,9 +140,10 @@ let frame = 1000 / 60;
       ppBtnContent(pauseIcon);
     }
 
-    if (pointer.dwn) {
+    handleSlash();
+    if (isSlashing) {
       ctx.beginPath();
-      ctx.arc(pointer.pos.x, pointer.pos.y, 8, 0, 2 * Math.PI);
+      ctx.arc(pointerPos.x, pointerPos.y, 8, 0, 2 * Math.PI);
       ctx.fillStyle = "red";
       ctx.fill();
     }
