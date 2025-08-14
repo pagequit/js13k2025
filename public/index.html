@@ -13,16 +13,32 @@
         background: black;
         text-align: center;
       }
+      p,
       canvas {
+        margin: 0;
+        display: inline-block;
+        position: relative;
         height: 100%;
         width: auto;
         image-rendering: pixelated;
         background: #131313;
+        position: relative;
+      }
+      svg {
+        color: white;
+        position: absolute;
+        top: 0;
+        right: 0;
+        padding: 8px;
+        height: 4%;
+        width: auto;
       }
     </style>
   </head>
   <body>
-    <canvas id="canvas"></canvas>
+    <p id="wrap">
+      <canvas id="app"></canvas>
+    </p>
     <script type="module" src="main.js"></script>
   </body>
 </html>
