@@ -105,10 +105,11 @@ app.addEventListener("contextmenu", (e) => {
   e.preventDefault();
 });
 
-let slashOrigin = vec();
+let slashPos = vec();
 let slashDelta = vec();
 let isSlashing = false;
-let slashIndex = 0;
+
+let slashParticleIndex = 0;
 let slashParticles = [...Array(16)].map(() => ({
   age: 0,
   pos: vec(),
@@ -116,17 +117,17 @@ let slashParticles = [...Array(16)].map(() => ({
 
 let updateSlashParticles = () => {
   if (isSlashing) {
-    let currentParticle = slashParticles[slashIndex];
+    let currentParticle = slashParticles[slashParticleIndex];
     if (currentParticle.age < 1) {
       currentParticle.age = 1;
-      vecSet(currentParticle.pos, pointerPos);
+      vecSet(currentParticle.pos, slashPos);
     }
 
-    if (++slashIndex >= 16) {
-      slashIndex = 0;
+    if (++slashParticleIndex >= 16) {
+      slashParticleIndex = 0;
     }
   } else {
-    slashIndex = 0;
+    slashParticleIndex = 0;
   }
 
   ctx.fillStyle = "white";
@@ -144,17 +145,30 @@ let updateSlashParticles = () => {
 };
 
 let handleSlash = () => {
+  // prettier-ignore
+  // zzfx(...[1.2,0,90,.01,.06,.05,4,2,5,,,,.3,.3,,,.16,.97,.09,.1,-2375]); // Hit
+
   if (isPointerDown) {
     vecSet(slashDelta, {
-      x: slashOrigin.x - pointerPos.x,
-      y: slashOrigin.y - pointerPos.y,
+      x: slashPos.x - pointerPos.x,
+      y: slashPos.y - pointerPos.y,
     });
-    vecSet(slashOrigin, pointerPos);
 
-    isSlashing = vecMag(slashDelta) > 8; // "slash dead zone"
+    isSlashing = vecMag(slashDelta) > 16; // "slash dead zone"
   } else {
-    isSlashing = false;
+    isSlashing = false
   }
+
+  vecSet(slashPos, pointerPos);
+};
+
+let thingPos = vec(app.width / 2, app.height / 2 - 200);
+let thingRad = 42;
+let drawThing = () => {
+  ctx.strokeStyle = "white";
+  ctx.beginPath();
+  ctx.arc(thingPos.x, thingPos.y, thingRad, 0, 2 * Math.PI);
+  ctx.stroke();
 };
 
 let prev = 0;
@@ -176,6 +190,8 @@ let frame = 1000 / 60;
 
     handleSlash();
     updateSlashParticles();
+
+    drawThing();
   }
   requestAnimationFrame(animate);
 })(0);
