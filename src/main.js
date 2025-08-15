@@ -2,9 +2,6 @@ import song from "./song";
 import useZzFX from "./zzfx";
 import { svg } from "./markup";
 
-let lives = 5;
-let score = 0;
-
 app.width = 360;
 app.height = 740;
 
@@ -188,42 +185,72 @@ let drawScoreArea = () => {
   });
 };
 
-let thingSpeed = 4;
-let thingRadius = 42;
-let things = createEntityBuffer(1, () => ({
-  pos: vec(app.width / 2, app.height),
-}));
+// prettier-ignore
+let beats = [
+  [1,0,0],
+  [0,0,0],
+  [0,1,0],
+  [0,0,0],
+  [1,1,1],
+  [0,0,0],
+  [0,1,0],
+  [0,1,0],
+  [1,0,1],
+  [0,0,0],
+  [0,1,0],
+  [0,0,0],
+  [0,1,1],
+  [0,1,0],
+  [0,1,0],
+];
+
+let thingRadius = 40;
+let things = beats.reduce((acc, cur, idx) => {
+  cur.forEach((ct, i) => {
+    if (ct) {
+      acc.push({
+        pos: vec(i * 120 + 60, idx * thingRadius * 2 + app.height),
+      });
+    }
+  });
+
+  return acc;
+}, []);
+
+let then = performance.now();
+let delta = 0;
+let interval = 1000 / 60;
+
+let score = 0;
+let bgmPrev = 0;
+let bgmDelta = 0;
 
 let processGame = () => {
-  if (
-    isPointerDown &&
-    inAABB(pointerPos, scoreAreas[0].min, scoreAreas[2].max) &&
-    vecDis(pointerPos, things[0].pos) <= thingRadius
-  ) {
-    things[0].pos.y = app.height;
-    score++;
-  }
+  let bgmTime = bgm.x.currentTime;
+  bgmDelta = bgmTime - bgmPrev;
+  bgmPrev = bgmTime;
 
   ctx.strokeStyle = "white";
   for (let thing of things) {
-    thing.pos.y -= thingSpeed;
-    if (thing.pos.y < 0) {
-      thing.pos.y = app.height;
-      lives--;
+    if (
+      isPointerDown &&
+      inAABB(pointerPos, scoreAreas[0].min, scoreAreas[2].max) && // TODO
+      vecDis(pointerPos, thing.pos) <= thingRadius
+    ) {
+      thing.pos.y -= app.height;
+      score++;
     }
 
+    thing.pos.y -= bgmDelta * 100;
     ctx.beginPath();
     ctx.arc(thing.pos.x, thing.pos.y, thingRadius, 0, 2 * Math.PI);
     ctx.stroke();
   }
 };
-
-let prev = 0;
-let frame = 1000 / 60;
-(function animate(time) {
-  let delta = time - prev;
-  if (delta >= frame) {
-    prev = time - (delta % frame);
+(function animate(timestamp) {
+  delta = timestamp - then;
+  if (delta > interval) {
+    then = timestamp - (delta % interval);
 
     if (unPaused) {
       ppBtnContent(pauseIcon);
@@ -235,11 +262,11 @@ let frame = 1000 / 60;
       processGame();
 
       drawText("Score: " + score, 12, 20, 16);
-      drawText("Lives: " + lives, 280, 20, 16);
+      drawText("Delta: " + delta.toFixed(2), 244, 20, 16);
     } else {
       ppBtnContent(playIcon);
       drawText("paused", 140, 360);
     }
   }
   requestAnimationFrame(animate);
-})(0);
+})(then);
