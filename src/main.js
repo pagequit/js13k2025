@@ -15,8 +15,14 @@ let pauseIcon =
   "M6 6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zm8 0a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1z";
 let [ppBtn, ppBtnContent] = svg(playIcon);
 ppBtn.style =
-  "color:white;position:absolute;right:0;margin:16px;padding:8px;height:4%;width:auto;border:2px solid white;border-radius:50%;";
+  "color:white;position:absolute;right:0;margin:8px;padding:4px;height:4%;width:auto;border:1px solid white;border-radius:4px;";
 wrap.appendChild(ppBtn);
+
+// prettier-ignore
+// zzfx(...[1.2,0,90,.01,.06,.05,4,2,5,,,,.3,.3,,,.16,.97,.09,.1,-2375]); // Hit
+// zzfx(...[,,281,.03,.09,.08,1,3.3,,,,,,,,,,.93,.02]); // ???
+// zzfx(...[,,141,.31,.09,.08,,3.6,,54,,,.15,,5.5,,,.57,.45,.47]); // wobble
+// zzfx(...[.7,,404,.03,.02,.07,1,1.4,1,88,,,,.8,,,,.77,.05,,169]); // jump
 
 let bgm = {
   v: 0.3,
@@ -34,10 +40,6 @@ let [zzfx] = useZzFX(sfx);
 
 let buffer = zzfxM(...song);
 let node;
-// prettier-ignore
-// zzfx(...[,,281,.03,.09,.08,1,3.3,,,,,,,,,,.93,.02]); // ???
-// zzfx(...[,,141,.31,.09,.08,,3.6,,54,,,.15,,5.5,,,.57,.45,.47]); // wobble
-// zzfx(...[.7,,404,.03,.02,.07,1,1.4,1,88,,,,.8,,,,.77,.05,,169]); // jump
 
 let unPaused = !!node;
 ppBtn.addEventListener("click", () => {
@@ -105,33 +107,32 @@ app.addEventListener("contextmenu", (e) => {
   e.preventDefault();
 });
 
-let slashPos = vec();
-let slashDelta = vec();
-let isSlashing = false;
+let getEntityBuffer = (size, create) => {
+  return [0, [...Array(size)].map(create)];
+};
 
-let slashParticleIndex = 0;
-let slashParticles = [...Array(16)].map(() => ({
+let [pointerParticleIndex, pointerParticles] = getEntityBuffer(16, () => ({
   age: 0,
   pos: vec(),
 }));
 
-let updateSlashParticles = () => {
-  if (isSlashing) {
-    let currentParticle = slashParticles[slashParticleIndex];
+let updatePointerParticles = () => {
+  if (isPointerDown) {
+    let currentParticle = pointerParticles[pointerParticleIndex];
     if (currentParticle.age < 1) {
       currentParticle.age = 1;
-      vecSet(currentParticle.pos, slashPos);
+      vecSet(currentParticle.pos, pointerPos);
     }
 
-    if (++slashParticleIndex >= 16) {
-      slashParticleIndex = 0;
+    if (++pointerParticleIndex >= pointerParticles.length) {
+      pointerParticleIndex = 0;
     }
   } else {
-    slashParticleIndex = 0;
+    pointerParticleIndex = 0;
   }
 
   ctx.fillStyle = "white";
-  for (let particle of slashParticles) {
+  for (let particle of pointerParticles) {
     if (particle.age > 0) {
       ctx.beginPath();
       ctx.arc(particle.pos.x, particle.pos.y, 8 / particle.age, 0, 2 * Math.PI);
@@ -144,31 +145,44 @@ let updateSlashParticles = () => {
   }
 };
 
-let handleSlash = () => {
-  // prettier-ignore
-  // zzfx(...[1.2,0,90,.01,.06,.05,4,2,5,,,,.3,.3,,,.16,.97,.09,.1,-2375]); // Hit
+let thingSpeed = 4;
+let thingRadius = 42;
 
-  if (isPointerDown) {
-    vecSet(slashDelta, {
-      x: slashPos.x - pointerPos.x,
-      y: slashPos.y - pointerPos.y,
-    });
+let [thingsIndex, things] = getEntityBuffer(1, () => ({
+  pos: vec(app.width / 2, app.height),
+}));
 
-    isSlashing = vecMag(slashDelta) > 16; // "slash dead zone"
-  } else {
-    isSlashing = false
+let updateThings = () => {
+  // let currentThing = things[thingsIndex];
+  // if (++thingsIndex >= things.length) {
+  //   thingsIndex = 0;
+  // }
+
+  ctx.strokeStyle = "white";
+  for (let thing of things) {
+    thing.pos.y -= thingSpeed;
+    if (thing.pos.y < 0) {
+      thing.pos.y = app.height;
+    }
+
+    ctx.beginPath();
+    ctx.arc(thing.pos.x, thing.pos.y, thingRadius, 0, 2 * Math.PI);
+    ctx.stroke();
   }
-
-  vecSet(slashPos, pointerPos);
 };
 
-let thingPos = vec(app.width / 2, app.height / 2 - 200);
-let thingRad = 42;
-let drawThing = () => {
-  ctx.strokeStyle = "white";
-  ctx.beginPath();
-  ctx.arc(thingPos.x, thingPos.y, thingRad, 0, 2 * Math.PI);
-  ctx.stroke();
+let drawText = (text, x, y, size = 24, color = "white") => {
+  ctx.font = size + "px monospace";
+  ctx.fillStyle = color;
+  ctx.fillText(text, x, y);
+};
+
+let score = 0;
+let updateScore = () => {
+  if (isPointerDown && vecDis(pointerPos, things[0].pos) <= thingRadius) {
+    score++;
+  }
+  drawText("Score: " + score, 12, 20, 16);
 };
 
 let prev = 0;
@@ -177,21 +191,18 @@ let frame = 1000 / 60;
   let delta = time - prev;
   if (delta >= frame) {
     prev = time - (delta % frame);
-    ctx.clearRect(0, 0, app.width, app.height);
 
-    if (!unPaused) {
-      ctx.font = "24px monospace";
-      ctx.fillStyle = "white";
-      ctx.fillText("paused", 140, 360);
-      ppBtnContent(playIcon);
-    } else {
+    if (unPaused) {
       ppBtnContent(pauseIcon);
+      ctx.clearRect(0, 0, app.width, app.height);
+
+      updateScore();
+      updatePointerParticles();
+      updateThings();
+    } else {
+      ppBtnContent(playIcon);
+      drawText("paused", 140, 360);
     }
-
-    handleSlash();
-    updateSlashParticles();
-
-    drawThing();
   }
   requestAnimationFrame(animate);
 })(0);
