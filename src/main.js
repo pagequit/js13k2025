@@ -2,6 +2,9 @@ import song from "./song";
 import useZzFX from "./zzfx";
 import { svg } from "./markup";
 
+let lives = 5;
+let score = 0;
+
 app.width = 360;
 app.height = 740;
 
@@ -15,7 +18,7 @@ let pauseIcon =
   "M6 6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zm8 0a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1z";
 let [ppBtn, ppBtnContent] = svg(playIcon);
 ppBtn.style =
-  "color:white;position:absolute;right:0;margin:8px;padding:4px;height:4%;width:auto;border:1px solid white;border-radius:4px;";
+  "color:white;position:absolute;bottom:0;left:0;margin:8px;padding:4px;height:4%;width:auto;border:1px solid white;border-radius:50%;";
 wrap.appendChild(ppBtn);
 
 // prettier-ignore
@@ -57,6 +60,12 @@ ppBtn.addEventListener("click", () => {
   }
 });
 
+let drawText = (text, x, y, size = 24, color = "white") => {
+  ctx.font = size + "px monospace";
+  ctx.fillStyle = color;
+  ctx.fillText(text, x, y);
+};
+
 let vec = (x = 0, y = 0) => ({ x, y });
 
 let vecSet = (a, b) => {
@@ -71,6 +80,12 @@ let vecDis = (a, b) => {
   let dy = a.y - b.y;
 
   return Math.sqrt(dx * dx + dy * dy);
+};
+
+let inAABB = (point, min, max) => {
+  return (
+    point.x >= min.x && point.x <= max.x && point.y >= min.y && point.y <= max.y
+  );
 };
 
 let isPointerDown = false;
@@ -145,14 +160,33 @@ let updatePointerParticles = () => {
   }
 };
 
+let scoreAreaMin = vec(0, 32);
+let scoreAreaMax = vec(app.width, 120);
+let drawScoreArea = () => {
+  ctx.fillStyle = "rgba(255,255,255,.1)";
+  ctx.fillRect(
+    scoreAreaMin.x,
+    scoreAreaMin.y,
+    scoreAreaMax.x,
+    scoreAreaMax.y - 32,
+  );
+};
+
 let thingSpeed = 4;
 let thingRadius = 42;
-
 let [thingsIndex, things] = getEntityBuffer(1, () => ({
   pos: vec(app.width / 2, app.height),
 }));
 
-let updateThings = () => {
+let processGame = () => {
+  if (
+    isPointerDown &&
+    inAABB(pointerPos, scoreAreaMin, scoreAreaMax) &&
+    vecDis(pointerPos, things[0].pos) <= thingRadius
+  ) {
+    things[0].pos.y = app.height;
+    score++;
+  }
   // let currentThing = things[thingsIndex];
   // if (++thingsIndex >= things.length) {
   //   thingsIndex = 0;
@@ -163,26 +197,13 @@ let updateThings = () => {
     thing.pos.y -= thingSpeed;
     if (thing.pos.y < 0) {
       thing.pos.y = app.height;
+      lives--;
     }
 
     ctx.beginPath();
     ctx.arc(thing.pos.x, thing.pos.y, thingRadius, 0, 2 * Math.PI);
     ctx.stroke();
   }
-};
-
-let drawText = (text, x, y, size = 24, color = "white") => {
-  ctx.font = size + "px monospace";
-  ctx.fillStyle = color;
-  ctx.fillText(text, x, y);
-};
-
-let score = 0;
-let updateScore = () => {
-  if (isPointerDown && vecDis(pointerPos, things[0].pos) <= thingRadius) {
-    score++;
-  }
-  drawText("Score: " + score, 12, 20, 16);
 };
 
 let prev = 0;
@@ -196,9 +217,13 @@ let frame = 1000 / 60;
       ppBtnContent(pauseIcon);
       ctx.clearRect(0, 0, app.width, app.height);
 
-      updateScore();
+      drawScoreArea();
       updatePointerParticles();
-      updateThings();
+
+      processGame();
+
+      drawText("Score: " + score, 12, 20, 16);
+      drawText("Lives: " + lives, 280, 20, 16);
     } else {
       ppBtnContent(playIcon);
       drawText("paused", 140, 360);
