@@ -18,6 +18,12 @@ ppBtn.style =
   "color:white;position:absolute;bottom:0;left:0;margin:8px;padding:4px;height:4%;width:auto;border:1px solid white;border-radius:50%;";
 wrap.appendChild(ppBtn);
 
+let cyan = "117, 252, 253";
+let blue = "103, 190, 250";
+let indigo = "128, 130, 247";
+let phinox = "177, 78, 246";
+let fuchsia = "234, 59, 247";
+
 // prettier-ignore
 // zzfx(...[1.2,0,90,.01,.06,.05,4,2,5,,,,.3,.3,,,.16,.97,.09,.1,-2375]); // Hit
 // zzfx(...[,,281,.03,.09,.08,1,3.3,,,,,,,,,,.93,.02]); // ???
@@ -167,41 +173,41 @@ let scoreAreas = [
     min: vec(0, 120),
     max: vec(app.width, 208),
   },
-  {
-    min: vec(0, 208),
-    max: vec(app.width, 296),
-  },
 ];
 
 let drawScoreArea = () => {
   scoreAreas.forEach((area, index) => {
-    ctx.fillStyle = `rgba(255,255,255,${(index % 3) * 0.1 + 0.1})`;
-    ctx.fillRect(
+    ctx.fillStyle = `rgba(${index % 2 ? cyan : fuchsia}, 0.1)`;
+    ctx.strokeStyle = `rgb(${index % 2 ? cyan : fuchsia})`;
+    ctx.beginPath();
+    ctx.rect(
       area.min.x,
       area.min.y,
       area.max.x,
-      area.max.y - (32 + index * 88),
+      area.max.y - (32 + index * 80),
     );
+    ctx.stroke();
+    ctx.fill();
   });
 };
 
 // prettier-ignore
 let beats = [
-  [1,0,0],
-  [0,0,0],
-  [0,1,0],
-  [0,0,0],
-  [1,1,1],
-  [0,0,0],
-  [0,1,0],
-  [0,1,0],
-  [1,0,1],
-  [0,0,0],
-  [0,1,0],
-  [0,0,0],
-  [0,1,1],
-  [0,1,0],
-  [0,1,0],
+  [1,0],
+  [0,0],
+  [0,1],
+  [0,0],
+  [1,1],
+  [0,0],
+  [0,1],
+  [0,1],
+  [1,0],
+  [0,0],
+  [0,1],
+  [0,0],
+  [0,1],
+  [0,1],
+  [0,1],
 ];
 
 let thingRadius = 40;
@@ -209,7 +215,7 @@ let things = beats.reduce((acc, cur, idx) => {
   cur.forEach((ct, i) => {
     if (ct) {
       acc.push({
-        pos: vec(i * 120 + 60, idx * thingRadius * 2 + app.height),
+        pos: vec(i * 80 + 140, idx * thingRadius * 2 + app.height),
       });
     }
   });
@@ -231,10 +237,11 @@ let processGame = () => {
   bgmPrev = bgmTime;
 
   ctx.strokeStyle = "white";
+  ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
   for (let thing of things) {
     if (
       isPointerDown &&
-      inAABB(pointerPos, scoreAreas[0].min, scoreAreas[2].max) && // TODO
+      inAABB(pointerPos, scoreAreas[0].min, scoreAreas[1].max) && // TODO
       vecDis(pointerPos, thing.pos) <= thingRadius
     ) {
       thing.pos.y -= app.height;
@@ -245,6 +252,7 @@ let processGame = () => {
     ctx.beginPath();
     ctx.arc(thing.pos.x, thing.pos.y, thingRadius, 0, 2 * Math.PI);
     ctx.stroke();
+    ctx.fill();
   }
 };
 (function animate(timestamp) {
