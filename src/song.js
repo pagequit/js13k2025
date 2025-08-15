@@ -1,4 +1,4 @@
-export default [
+export default (bpm) => [
   [
     [
       2,
@@ -1248,5 +1248,5 @@ export default [
     ],
   ],
   [0],
-  60,
+  bpm,
 ];

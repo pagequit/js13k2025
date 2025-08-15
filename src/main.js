@@ -1,4 +1,4 @@
-import song from "./song";
+import getSong from "./song";
 import useZzFX from "./zzfx";
 import { svg } from "./markup";
 
@@ -29,6 +29,9 @@ let fuchsia = "234, 59, 247";
 // zzfx(...[,,281,.03,.09,.08,1,3.3,,,,,,,,,,.93,.02]); // ???
 // zzfx(...[,,141,.31,.09,.08,,3.6,,54,,,.15,,5.5,,,.57,.45,.47]); // wobble
 // zzfx(...[.7,,404,.03,.02,.07,1,1.4,1,88,,,,.8,,,,.77,.05,,169]); // jump
+
+let bpm = 80;
+let song = getSong(bpm);
 
 let bgm = {
   v: 0.3,
@@ -191,23 +194,22 @@ let drawScoreArea = () => {
   });
 };
 
-// prettier-ignore
 let beats = [
-  [1,0],
-  [0,0],
-  [0,1],
-  [0,0],
-  [1,1],
-  [0,0],
-  [0,1],
-  [0,1],
-  [1,0],
-  [0,0],
-  [0,1],
-  [0,0],
-  [0,1],
-  [0,1],
-  [0,1],
+  [1, 0],
+  [0, 0],
+  [0, 2],
+  [0, 0],
+  [1, 2],
+  [0, 0],
+  [0, 1],
+  [0, 2],
+  [1, 0],
+  [0, 0],
+  [0, 1],
+  [0, 0],
+  [0, 1],
+  [0, 2],
+  [0, 1],
 ];
 
 let thingRadius = 40;
@@ -215,6 +217,7 @@ let things = beats.reduce((acc, cur, idx) => {
   cur.forEach((ct, i) => {
     if (ct) {
       acc.push({
+        col: ct,
         pos: vec(i * 80 + 140, idx * thingRadius * 2 + app.height),
       });
     }
@@ -236,25 +239,28 @@ let processGame = () => {
   bgmDelta = bgmTime - bgmPrev;
   bgmPrev = bgmTime;
 
-  ctx.strokeStyle = "white";
-  ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
   for (let thing of things) {
-    if (
-      isPointerDown &&
-      inAABB(pointerPos, scoreAreas[0].min, scoreAreas[1].max) && // TODO
-      vecDis(pointerPos, thing.pos) <= thingRadius
-    ) {
-      thing.pos.y -= app.height;
-      score++;
-    }
+    scoreAreas.forEach((area, areaIndex) => {
+      if (
+        isPointerDown &&
+        vecDis(pointerPos, thing.pos) <= thingRadius &&
+        inAABB(thing.pos, area.min, area.max)
+      ) {
+        score += areaIndex + 1 === thing.col ? -1 : 1;
+        thing.pos.y -= app.height;
+      }
+    });
 
-    thing.pos.y -= bgmDelta * 100;
+    ctx.fillStyle = `rgba(${thing.col % 2 ? cyan : fuchsia}, 0.1)`;
+    ctx.strokeStyle = `rgb(${thing.col % 2 ? cyan : fuchsia})`;
+    thing.pos.y -= bgmDelta * (bpm * 2);
     ctx.beginPath();
     ctx.arc(thing.pos.x, thing.pos.y, thingRadius, 0, 2 * Math.PI);
     ctx.stroke();
     ctx.fill();
   }
 };
+
 (function animate(timestamp) {
   delta = timestamp - then;
   if (delta > interval) {
