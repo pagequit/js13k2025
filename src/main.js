@@ -122,11 +122,12 @@ app.addEventListener("contextmenu", (e) => {
   e.preventDefault();
 });
 
-let getEntityBuffer = (size, create) => {
-  return [0, [...Array(size)].map(create)];
+let createEntityBuffer = (size, create) => {
+  return [...Array(size)].map(create);
 };
 
-let [pointerParticleIndex, pointerParticles] = getEntityBuffer(16, () => ({
+let pointerParticleIndex = 0;
+let pointerParticles = createEntityBuffer(16, () => ({
   age: 0,
   pos: vec(),
 }));
@@ -160,37 +161,48 @@ let updatePointerParticles = () => {
   }
 };
 
-let scoreAreaMin = vec(0, 32);
-let scoreAreaMax = vec(app.width, 120);
+let scoreAreas = [
+  {
+    min: vec(0, 32),
+    max: vec(app.width, 120),
+  },
+  {
+    min: vec(0, 120),
+    max: vec(app.width, 208),
+  },
+  {
+    min: vec(0, 208),
+    max: vec(app.width, 296),
+  },
+];
+
 let drawScoreArea = () => {
-  ctx.fillStyle = "rgba(255,255,255,.1)";
-  ctx.fillRect(
-    scoreAreaMin.x,
-    scoreAreaMin.y,
-    scoreAreaMax.x,
-    scoreAreaMax.y - 32,
-  );
+  scoreAreas.forEach((area, index) => {
+    ctx.fillStyle = `rgba(255,255,255,${(index % 3) * 0.1 + 0.1})`;
+    ctx.fillRect(
+      area.min.x,
+      area.min.y,
+      area.max.x,
+      area.max.y - (32 + index * 88),
+    );
+  });
 };
 
 let thingSpeed = 4;
 let thingRadius = 42;
-let [thingsIndex, things] = getEntityBuffer(1, () => ({
+let things = createEntityBuffer(1, () => ({
   pos: vec(app.width / 2, app.height),
 }));
 
 let processGame = () => {
   if (
     isPointerDown &&
-    inAABB(pointerPos, scoreAreaMin, scoreAreaMax) &&
+    inAABB(pointerPos, scoreAreas[0].min, scoreAreas[2].max) &&
     vecDis(pointerPos, things[0].pos) <= thingRadius
   ) {
     things[0].pos.y = app.height;
     score++;
   }
-  // let currentThing = things[thingsIndex];
-  // if (++thingsIndex >= things.length) {
-  //   thingsIndex = 0;
-  // }
 
   ctx.strokeStyle = "white";
   for (let thing of things) {
