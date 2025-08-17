@@ -24,14 +24,12 @@ let indigo = "128, 130, 247";
 let phinox = "177, 78, 246";
 let fuchsia = "234, 59, 247";
 
-// prettier-ignore
-// zzfx(...[1.2,0,90,.01,.06,.05,4,2,5,,,,.3,.3,,,.16,.97,.09,.1,-2375]); // Hit
-// zzfx(...[,,281,.03,.09,.08,1,3.3,,,,,,,,,,.93,.02]); // ???
-// zzfx(...[,,141,.31,.09,.08,,3.6,,54,,,.15,,5.5,,,.57,.45,.47]); // wobble
-// zzfx(...[.7,,404,.03,.02,.07,1,1.4,1,88,,,,.8,,,,.77,.05,,169]); // jump
-
-let bpm = 80;
+let bpm = 60;
 let song = getSong(bpm);
+
+// I have no clue where this 8.47 came from >.<
+// https://github.com/keithclark/ZzFXM/blob/cb07fa9ca36aefd67a0c8c656d2958b62f8ed9fe/tools/tracker/src/components/SongProperties.svelte#L20
+let songSec = ((12 + 8 + 8 + 16) * (125 / bpm)) / 8.47;
 
 let bgm = {
   v: 0.3,
@@ -39,7 +37,7 @@ let bgm = {
   x: new AudioContext(),
 };
 let sfx = {
-  v: 0.05,
+  v: 0.4,
   r: 44100,
   x: new AudioContext(),
 };
@@ -53,7 +51,7 @@ let node;
 let unPaused = !!node;
 ppBtn.addEventListener("click", () => {
   // prettier-ignore
-  zzfx(...[1.7,,61,.2,,.04,3,.4,,,150,.07,.01,,,,.12,.67]); // pause
+  zzfx(...[.4,,61,.1,,.04,3,.4,,,150,.07,.01,,,,.12,.67]); // pause
   if ((unPaused = !unPaused)) {
     if (!node) {
       node = zzfxP(...buffer);
@@ -170,11 +168,11 @@ let updatePointerParticles = () => {
 let scoreAreas = [
   {
     min: vec(0, 32),
-    max: vec(app.width, 120),
+    max: vec(app.width, 112),
   },
   {
-    min: vec(0, 120),
-    max: vec(app.width, 208),
+    min: vec(0, 112),
+    max: vec(app.width, 192),
   },
 ];
 
@@ -194,22 +192,68 @@ let drawScoreArea = () => {
   });
 };
 
+// prettier-ignore
 let beats = [
+  [0, 0],
+  [0, 0],
+  [0, 0],
+  [0, 0],
+  [0, 0],
+  [0, 0],
+  [0, 0],
+  [0, 0],
+  [0, 0],
+  [0, 0],
+  [0, 0],
+  [0, 0],
+
   [1, 0],
   [0, 0],
-  [0, 2],
+
   [0, 0],
-  [1, 2],
   [0, 0],
+
   [0, 1],
-  [0, 2],
+  [0, 0],
+  
+  [0, 0],
+  [0, 0],
+
   [1, 0],
   [0, 0],
+
+  [0, 0],
+  [0, 0],
+
   [0, 1],
   [0, 0],
-  [0, 1],
-  [0, 2],
-  [0, 1],
+  
+  [0, 0],
+  [0, 0],
+
+  [0, 0],
+  [0, 0],
+
+  [0, 0],
+  [0, 0],
+
+  [0, 0],
+  [0, 0],
+
+  [0, 0],
+  [0, 0],
+
+  [0, 0],
+  [0, 0],
+
+  [0, 0],
+  [0, 0],
+
+  [0, 0],
+  [0, 0],
+
+  [0, 0],
+  [0, 0],
 ];
 
 let thingRadius = 40;
@@ -218,7 +262,7 @@ let things = beats.reduce((acc, cur, idx) => {
     if (ct) {
       acc.push({
         col: ct,
-        pos: vec(i * 80 + 140, idx * thingRadius * 2 + app.height),
+        pos: vec(i * 80 + 140, idx * 80 + 40 + 32 + 80),
       });
     }
   });
@@ -234,26 +278,44 @@ let score = 0;
 let bgmPrev = 0;
 let bgmDelta = 0;
 
+let bgmD = 0;
+
 let processGame = () => {
   let bgmTime = bgm.x.currentTime;
   bgmDelta = bgmTime - bgmPrev;
   bgmPrev = bgmTime;
 
   for (let thing of things) {
+    bgmD = bgmDelta * ((80 * beats.length) / songSec);
+    thing.pos.y -= bgmD;
+
     scoreAreas.forEach((area, areaIndex) => {
       if (
         isPointerDown &&
         vecDis(pointerPos, thing.pos) <= thingRadius &&
         inAABB(thing.pos, area.min, area.max)
       ) {
-        score += areaIndex + 1 === thing.col ? -1 : 1;
+        if (areaIndex + 1 === thing.col) {
+          score -= 1;
+          // prettier-ignore
+          zzfx(...[.4,0,164.81,.2,.2,0,,,,,,,,.1,,,.01,.4,.05,1]) // Flute E3
+        } else {
+          score += 1;
+          // prettier-ignore
+          zzfx(...[0.3,0,415.3,.2,.2,0,,,,,,,,.1,,,.01,.4,.05,1]); // Flute G#4
+          // prettier-ignore
+          // zzfx(...[2,0,277.18,.2,.2,0,,,,,,,,.1,,,.01,.4,.05,1]) // Flute C#4
+          // prettier-ignore
+          // zzfx(...[2,0,329.63,.2,.2,0,,,,,,,,.1,,,.01,.4,.05,1]) // Flute E4
+          // prettier-ignore
+          // zzfx(...[2,0,369.99,.2,.2,0,,,,,,,,.1,,,.01,.4,.05,1]) // Flute F#4
+        }
         thing.pos.y -= app.height;
       }
     });
 
     ctx.fillStyle = `rgba(${thing.col % 2 ? cyan : fuchsia}, 0.1)`;
     ctx.strokeStyle = `rgb(${thing.col % 2 ? cyan : fuchsia})`;
-    thing.pos.y -= bgmDelta * (bpm * 2);
     ctx.beginPath();
     ctx.arc(thing.pos.x, thing.pos.y, thingRadius, 0, 2 * Math.PI);
     ctx.stroke();
@@ -276,11 +338,16 @@ let processGame = () => {
       processGame();
 
       drawText("Score: " + score, 12, 20, 16);
-      drawText("Delta: " + delta.toFixed(2), 244, 20, 16);
+      drawText("bgmD: " + bgmD.toFixed(3), 244, 20, 16);
     } else {
       ppBtnContent(playIcon);
       drawText("paused", 140, 360);
     }
+  }
+
+  if (bgm.x.currentTime > songSec) {
+    bgm.x.suspend();
+    // return;
   }
   requestAnimationFrame(animate);
 })(then);

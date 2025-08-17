@@ -1,4 +1,4 @@
-export default (bpm) => [
+[
   [
     [, 0, , 0.1, 0.2, , , 0.8, , , , , , 0.1, , , 0.05, 0.5, 0.05],
     [, 0, 440, 0.2, 0.2, 0, , , , , , , , 0.1, , , 0.01, 0.4, 0.05, 1],
@@ -30,5 +30,20 @@ export default (bpm) => [
     [[7, , 1, , , , 1, , , , 1, , 1, ,]],
   ],
   [3, 0, 0, 1],
-  bpm,
+  60,
+  {
+    title: "Song of Bastet",
+    instruments: [
+      "Piano A1",
+      "Flute A4",
+      "Organ C3",
+      "Bass A2",
+      "Snare",
+      "Hihat",
+      "Bass Drum",
+      "Tick",
+      "Instrument 8",
+    ],
+    patterns: ["Pattern 0", "Pattern 1", "Mehby", "Tick, tick, tick"],
+  },
 ];
