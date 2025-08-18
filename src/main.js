@@ -32,7 +32,7 @@ let song = getSong(bpm);
 let songSec = ((12 + 8 + 8 + 16) * (125 / bpm)) / 8.47;
 
 let bgm = {
-  v: 0.3,
+  v: 0.03,
   r: 44100,
   x: new AudioContext(),
 };
@@ -194,66 +194,66 @@ let drawScoreArea = () => {
 
 // prettier-ignore
 let beats = [
+  [1, 0],
+  [0, 2],
+  [0, 0],
+  [0, 0],
+
   [0, 0],
   [0, 0],
   [0, 0],
   [0, 0],
+
   [0, 0],
   [0, 0],
-  [0, 0],
-  [0, 0],
-  [0, 0],
-  [0, 0],
-  [0, 0],
-  [0, 0],
+  [1, 0],
+  [0, 2],
+
+  // ---
 
   [1, 0],
   [0, 0],
-
   [0, 0],
   [0, 0],
 
+  [1, 2],
+  [0, 2],
+  [0, 0],
+  [1, 1],
+
+  // ---
+
+  [1, 0],
   [0, 1],
   [0, 0],
-  
-  [0, 0],
-  [0, 0],
+  [0, 2],
 
   [1, 0],
   [0, 0],
+  [0, 0],
+  [0, 0],
 
-  [0, 0],
-  [0, 0],
+  // ---
 
   [0, 1],
+  [1, 0],
+  [0, 2],
+  [2, 0],
+
   [0, 0],
-  
+  [0, 0],
   [0, 0],
   [0, 0],
 
   [0, 0],
   [0, 0],
-
   [0, 0],
   [0, 0],
 
   [0, 0],
   [0, 0],
-
-  [0, 0],
-  [0, 0],
-
-  [0, 0],
-  [0, 0],
-
-  [0, 0],
-  [0, 0],
-
-  [0, 0],
-  [0, 0],
-
-  [0, 0],
-  [0, 0],
+  [1, 0],
+  [0, 2],
 ];
 
 let thingRadius = 40;
@@ -262,7 +262,7 @@ let things = beats.reduce((acc, cur, idx) => {
     if (ct) {
       acc.push({
         col: ct,
-        pos: vec(i * 80 + 140, idx * 80 + 40 + 32 + 80),
+        pos: vec(i * 80 + 140, idx * 80 - (ct - 1) * 80 + 152),
       });
     }
   });
@@ -270,15 +270,9 @@ let things = beats.reduce((acc, cur, idx) => {
   return acc;
 }, []);
 
-let then = performance.now();
-let delta = 0;
-let interval = 1000 / 60;
-
 let score = 0;
 let bgmPrev = 0;
 let bgmDelta = 0;
-
-let bgmD = 0;
 
 let processGame = () => {
   let bgmTime = bgm.x.currentTime;
@@ -286,8 +280,7 @@ let processGame = () => {
   bgmPrev = bgmTime;
 
   for (let thing of things) {
-    bgmD = bgmDelta * ((80 * beats.length) / songSec);
-    thing.pos.y -= bgmD;
+    thing.pos.y -= bgmDelta * ((80 * beats.length) / songSec);
 
     scoreAreas.forEach((area, areaIndex) => {
       if (
@@ -301,15 +294,36 @@ let processGame = () => {
           zzfx(...[.4,0,164.81,.2,.2,0,,,,,,,,.1,,,.01,.4,.05,1]) // Flute E3
         } else {
           score += 1;
-          // prettier-ignore
-          zzfx(...[0.3,0,415.3,.2,.2,0,,,,,,,,.1,,,.01,.4,.05,1]); // Flute G#4
-          // prettier-ignore
-          // zzfx(...[2,0,277.18,.2,.2,0,,,,,,,,.1,,,.01,.4,.05,1]) // Flute C#4
-          // prettier-ignore
-          // zzfx(...[2,0,329.63,.2,.2,0,,,,,,,,.1,,,.01,.4,.05,1]) // Flute E4
-          // prettier-ignore
-          // zzfx(...[2,0,369.99,.2,.2,0,,,,,,,,.1,,,.01,.4,.05,1]) // Flute F#4
+
+          let bitmap = 0;
+          bitmap |= thing.pos.x > app.width / 2 ? 2 : 0;
+          bitmap |= thing.col > 1 ? 1 : 0;
+
+          switch (bitmap) {
+            case 0: {
+              // prettier-ignore
+              zzfx(...[.3,0,277.18,.2,.2,0,,,,,,,,.1,,,.01,.4,.05,1]) // Flute C#4
+              break;
+            }
+            case 1: {
+              // prettier-ignore
+              zzfx(...[.3,0,415.3,.2,.2,0,,,,,,,,.1,,,.01,.4,.05,1]); // Flute G#4
+              break;
+            }
+            case 2: {
+              // prettier-ignore
+              zzfx(...[.3,0,329.63,.2,.2,0,,,,,,,,.1,,,.01,.4,.05,1]) // Flute E4
+              break;
+            }
+            case 3: {
+              // prettier-ignore
+              zzfx(...[.3,0,369.99,.2,.2,0,,,,,,,,.1,,,.01,.4,.05,1]) // Flute F#4
+              break;
+            }
+          }
         }
+
+        // move the thing out of sight
         thing.pos.y -= app.height;
       }
     });
@@ -322,6 +336,10 @@ let processGame = () => {
     ctx.fill();
   }
 };
+
+let interval = 1000 / 60;
+let delta = 0;
+let then = performance.now();
 
 (function animate(timestamp) {
   delta = timestamp - then;
@@ -338,7 +356,6 @@ let processGame = () => {
       processGame();
 
       drawText("Score: " + score, 12, 20, 16);
-      drawText("bgmD: " + bgmD.toFixed(3), 244, 20, 16);
     } else {
       ppBtnContent(playIcon);
       drawText("paused", 140, 360);
@@ -347,7 +364,7 @@ let processGame = () => {
 
   if (bgm.x.currentTime > songSec) {
     bgm.x.suspend();
-    // return;
   }
+
   requestAnimationFrame(animate);
 })(then);
