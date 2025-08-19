@@ -165,6 +165,12 @@ let updatePointerParticles = () => {
   }
 };
 
+let bastet = new Image();
+bastet.src = "/bastet.png";
+let drawSprite = (col, row, x, y) => {
+  ctx.drawImage(bastet, col * 16, row * 16, 16, 16, x, y, 120, 120);
+};
+
 let scoreAreas = [
   {
     min: vec(0, 32),
@@ -282,6 +288,10 @@ let processGame = () => {
   for (let thing of things) {
     thing.pos.y -= bgmDelta * ((80 * beats.length) / songSec);
 
+    let bitmap = 0;
+    bitmap |= thing.pos.x > app.width / 2 ? 2 : 0;
+    bitmap |= thing.col > 1 ? 1 : 0;
+
     scoreAreas.forEach((area, areaIndex) => {
       if (
         isPointerDown &&
@@ -294,10 +304,6 @@ let processGame = () => {
           zzfx(...[.4,0,164.81,.2,.2,0,,,,,,,,.1,,,.01,.4,.05,1]) // Flute E3
         } else {
           score += 1;
-
-          let bitmap = 0;
-          bitmap |= thing.pos.x > app.width / 2 ? 2 : 0;
-          bitmap |= thing.col > 1 ? 1 : 0;
 
           switch (bitmap) {
             case 0: {
@@ -328,57 +334,48 @@ let processGame = () => {
       }
     });
 
-    ctx.fillStyle = `rgba(${thing.col % 2 ? cyan : fuchsia}, 0.1)`;
-    ctx.strokeStyle = `rgb(${thing.col % 2 ? cyan : fuchsia})`;
+    ctx.fillStyle = `rgba(${thing.col % 2 ? cyan : fuchsia}, .4)`;
     ctx.beginPath();
     ctx.arc(thing.pos.x, thing.pos.y, thingRadius, 0, 2 * Math.PI);
-    ctx.stroke();
     ctx.fill();
+    ctx.save();
+
+    switch (bitmap) {
+      case 0: {
+        ctx.translate(-40, -40);
+        break;
+      }
+      case 1: {
+        let x = thing.pos.x;
+        let y = thing.pos.y;
+        ctx.translate(x, y);
+        ctx.rotate((90 * Math.PI) / 180);
+        ctx.translate(-x - 40, -y - 40);
+        break;
+      }
+      case 2: {
+        let x = thing.pos.x;
+        let y = thing.pos.y;
+        ctx.translate(x, y);
+        ctx.rotate((180 * Math.PI) / 180);
+        ctx.translate(-x - 40, -y - 40);
+        break;
+      }
+      case 3: {
+        let x = thing.pos.x;
+        let y = thing.pos.y;
+        ctx.translate(x, y);
+        ctx.rotate((270 * Math.PI) / 180);
+        ctx.translate(-x - 40, -y - 40);
+        break;
+      }
+    }
+
+    ctx.globalAlpha = 0.6;
+    ctx.drawImage(bastet, 0, 2 * 16, 16, 16, thing.pos.x, thing.pos.y, 80, 80);
+    ctx.restore();
+    ctx.globalAlpha = 1;
   }
-};
-
-let drawBackground = () => {
-  const grad = ctx.createLinearGradient(
-    app.width / 2,
-    0,
-    app.width / 2,
-    app.height - 80,
-  );
-  grad.addColorStop(0, "#032a5e");
-  grad.addColorStop(0.5, "#1d4279");
-  grad.addColorStop(0.85, "#c2c3c7");
-  grad.addColorStop(0.9, "#d8b390");
-  grad.addColorStop(1, "#e44833");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 192, app.width, app.height - 80 - 192);
-
-  ctx.fillStyle = "#032a5e";
-  ctx.fillRect(0, 0, app.width, 192);
-
-  ctx.fillStyle = "#130603";
-  ctx.beginPath();
-  ctx.moveTo(270, app.height - 80);
-  ctx.lineTo(300, app.height - 110);
-  ctx.lineTo(315, app.height - 95);
-  ctx.lineTo(330, app.height - 110);
-  ctx.lineTo(360, app.height - 80);
-  ctx.fill();
-};
-
-let cat = new Image();
-cat.src = "/bastet.png";
-let drawCat = () => {
-  ctx.drawImage(
-    cat,
-    0,
-    16,
-    16,
-    16,
-    app.width / 2 - 64,
-    app.height - 128 - 16,
-    128,
-    128,
-  );
 };
 
 let interval = 1000 / 60;
@@ -394,13 +391,14 @@ let then = performance.now();
       ppBtnContent(pauseIcon);
       ctx.clearRect(0, 0, app.width, app.height);
 
-      drawBackground();
-
       drawScoreArea();
 
       processGame();
 
-      drawCat();
+      drawSprite(0, 0, -8, 50);
+      drawSprite(1, 0, app.width - 112, 50);
+
+      drawSprite(0, 1, app.width / 2 - 64, app.height - 120 - 16); // cat
 
       updatePointerParticles();
 
