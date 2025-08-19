@@ -23,6 +23,7 @@ let blue = "103, 190, 250";
 let indigo = "128, 130, 247";
 let phinox = "177, 78, 246";
 let fuchsia = "234, 59, 247";
+let bgc = "#0f0027";
 
 let bpm = 60;
 let song = getSong(bpm);
@@ -166,9 +167,44 @@ let updatePointerParticles = () => {
 };
 
 let bastet = new Image();
-bastet.src = "/bastet.png";
+bastet.src = "bastet.png";
 let drawSprite = (col, row, x, y) => {
   ctx.drawImage(bastet, col * 16, row * 16, 16, 16, x, y, 120, 120);
+};
+
+let drawThing = (dir, x, y) => {
+  let angle = (deg) => (deg * Math.PI) / 180;
+
+  switch (dir) {
+    case 0: {
+      ctx.translate(-25, -25);
+      break;
+    }
+    case 1: {
+      ctx.translate(x, y);
+      ctx.rotate(angle(90));
+      ctx.translate(-x - 25, -y - 25);
+      break;
+    }
+    case 2: {
+      ctx.translate(x, y);
+      ctx.rotate(angle(180));
+      ctx.translate(-x - 25, -y - 25);
+      break;
+    }
+    case 3: {
+      ctx.translate(x, y);
+      ctx.rotate(angle(270));
+      ctx.translate(-x - 25, -y - 25);
+      break;
+    }
+  }
+  ctx.drawImage(bastet, 2 * 16 + 4, 4, 8, 8, x, y, 50, 50);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+  ctx.translate(-40, -40);
+  ctx.drawImage(bastet, 1 * 16, 0, 16, 16, x, y, 80, 80);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
 };
 
 let scoreAreas = [
@@ -183,19 +219,35 @@ let scoreAreas = [
 ];
 
 let drawScoreArea = () => {
+  ctx.globalAlpha = 0.2;
+
   scoreAreas.forEach((area, index) => {
-    ctx.fillStyle = `rgba(${index % 2 ? cyan : fuchsia}, 0.1)`;
-    ctx.strokeStyle = `rgb(${index % 2 ? cyan : fuchsia})`;
-    ctx.beginPath();
-    ctx.rect(
+    let isTop = index != 0;
+    let color = `rgb(${isTop ? cyan : fuchsia})`;
+    let grad = ctx.createLinearGradient(
+      area.max.x / 2,
+      area.min.y,
+      area.max.x / 2,
+      area.max.y,
+    );
+    grad.addColorStop(0, bgc);
+    grad.addColorStop(0.5, color);
+    grad.addColorStop(1, bgc);
+    ctx.fillStyle = grad;
+    ctx.fillRect(
       area.min.x,
       area.min.y,
       area.max.x,
       area.max.y - (32 + index * 80),
     );
-    ctx.stroke();
-    ctx.fill();
+
+    let x = app.width / 2 + 40;
+    let y = area.min.y + 40;
+    drawThing(isTop ? 0 : 1, x - 80, y);
+    drawThing(isTop ? 2 : 3, x, y);
   });
+
+  ctx.globalAlpha = 1;
 };
 
 // prettier-ignore
@@ -336,44 +388,11 @@ let processGame = () => {
 
     ctx.fillStyle = `rgba(${thing.col % 2 ? cyan : fuchsia}, .4)`;
     ctx.beginPath();
-    ctx.arc(thing.pos.x, thing.pos.y, thingRadius, 0, 2 * Math.PI);
+    ctx.arc(thing.pos.x, thing.pos.y, 39, 0, 2 * Math.PI);
     ctx.fill();
-    ctx.save();
 
-    switch (bitmap) {
-      case 0: {
-        ctx.translate(-40, -40);
-        break;
-      }
-      case 1: {
-        let x = thing.pos.x;
-        let y = thing.pos.y;
-        ctx.translate(x, y);
-        ctx.rotate((90 * Math.PI) / 180);
-        ctx.translate(-x - 40, -y - 40);
-        break;
-      }
-      case 2: {
-        let x = thing.pos.x;
-        let y = thing.pos.y;
-        ctx.translate(x, y);
-        ctx.rotate((180 * Math.PI) / 180);
-        ctx.translate(-x - 40, -y - 40);
-        break;
-      }
-      case 3: {
-        let x = thing.pos.x;
-        let y = thing.pos.y;
-        ctx.translate(x, y);
-        ctx.rotate((270 * Math.PI) / 180);
-        ctx.translate(-x - 40, -y - 40);
-        break;
-      }
-    }
-
-    ctx.globalAlpha = 0.6;
-    ctx.drawImage(bastet, 0, 2 * 16, 16, 16, thing.pos.x, thing.pos.y, 80, 80);
-    ctx.restore();
+    ctx.globalAlpha = 0.8;
+    drawThing(bitmap, thing.pos.x, thing.pos.y);
     ctx.globalAlpha = 1;
   }
 };
@@ -396,9 +415,12 @@ let then = performance.now();
       processGame();
 
       drawSprite(0, 0, -8, 50);
-      drawSprite(1, 0, app.width - 112, 50);
+      ctx.scale(-1, 1);
+      drawSprite(0, 0, -app.width - 8, 50);
+      ctx.scale(1, 1);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-      drawSprite(0, 1, app.width / 2 - 64, app.height - 120 - 16); // cat
+      drawSprite(1, 1, app.width / 2 - 64, app.height - 120 - 16); // cat
 
       updatePointerParticles();
 
