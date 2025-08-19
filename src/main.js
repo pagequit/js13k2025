@@ -337,6 +337,50 @@ let processGame = () => {
   }
 };
 
+let drawBackground = () => {
+  const grad = ctx.createLinearGradient(
+    app.width / 2,
+    0,
+    app.width / 2,
+    app.height - 80,
+  );
+  grad.addColorStop(0, "#032a5e");
+  grad.addColorStop(0.5, "#1d4279");
+  grad.addColorStop(0.85, "#c2c3c7");
+  grad.addColorStop(0.9, "#d8b390");
+  grad.addColorStop(1, "#e44833");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 192, app.width, app.height - 80 - 192);
+
+  ctx.fillStyle = "#032a5e";
+  ctx.fillRect(0, 0, app.width, 192);
+
+  ctx.fillStyle = "#130603";
+  ctx.beginPath();
+  ctx.moveTo(270, app.height - 80);
+  ctx.lineTo(300, app.height - 110);
+  ctx.lineTo(315, app.height - 95);
+  ctx.lineTo(330, app.height - 110);
+  ctx.lineTo(360, app.height - 80);
+  ctx.fill();
+};
+
+let cat = new Image();
+cat.src = "/bastet.png";
+let drawCat = () => {
+  ctx.drawImage(
+    cat,
+    0,
+    16,
+    16,
+    16,
+    app.width / 2 - 64,
+    app.height - 128 - 16,
+    128,
+    128,
+  );
+};
+
 let interval = 1000 / 60;
 let delta = 0;
 let then = performance.now();
@@ -350,10 +394,15 @@ let then = performance.now();
       ppBtnContent(pauseIcon);
       ctx.clearRect(0, 0, app.width, app.height);
 
+      drawBackground();
+
       drawScoreArea();
-      updatePointerParticles();
 
       processGame();
+
+      drawCat();
+
+      updatePointerParticles();
 
       drawText("Score: " + score, 12, 20, 16);
     } else {
