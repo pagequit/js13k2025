@@ -295,7 +295,7 @@ let processGame = () => {
           // prettier-ignore
           zzfx(...[.3,0,164.81,.02,.2,,3,,,,10,.1,,,-1,,.05,.3,.1]); // E3
         } else {
-          score++;
+          score += 2;
 
           switch (bitmap) {
             // (10) v
