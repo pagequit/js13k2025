@@ -26,7 +26,7 @@ let fuchsia = "234, 59, 247";
 let bgc = "#0f0027";
 
 let bpm = 60;
-let song = getSong(bpm);
+let [song, beats] = getSong(bpm);
 
 // I have no clue where this 8.47 came from >.<
 // https://github.com/keithclark/ZzFXM/blob/cb07fa9ca36aefd67a0c8c656d2958b62f8ed9fe/tools/tracker/src/components/SongProperties.svelte#L20
@@ -249,74 +249,6 @@ let drawScoreArea = () => {
 
   ctx.globalAlpha = 1;
 };
-
-// 01 ^
-// 02 >
-// 10 v
-// 20 <
-// prettier-ignore
-let beats = [
-  [2, 1],
-  [0, 0],
-  [0, 0],
-  [0, 0],
-
-  [0, 0],
-  [0, 0],
-  [0, 0],
-  [0, 0],
-
-  [0, 0],
-  [0, 0],
-  [0, 0],
-  [0, 0],
-
-  // ---
-
-  [1, 0],
-  [0, 0],
-  [0, 1],
-  [1, 0],
-
-  [0, 0],
-  [0, 1],
-  [0, 0],
-  [0, 0],
-
-  // ---
-
-  [1, 0],
-  [0, 0],
-  [0, 1],
-  [1, 0],
-
-  [0, 0],
-  [0, 1],
-  [0, 0],
-  [0, 0],
-
-  // ---
-
-  [1, 0],
-  [0, 0],
-  [0, 1],
-  [1, 0],
-
-  [0, 0],
-  [0, 1],
-  [2, 0],
-  [0, 0],
-
-  [0, 0],
-  [2, 0],
-  [0, 2],
-  [0, 0],
-
-  [0, 0],
-  [0, 0],
-  [0, 0],
-  [0, 0],
-];
 
 let thingRadius = 40;
 let things = beats.reduce((acc, cur, idx) => {
