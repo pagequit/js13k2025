@@ -264,16 +264,20 @@ let things = beats.reduce((acc, cur, idx) => {
   return acc;
 }, []);
 
+let missedThing = things.map(() => false);
 let score = 0;
 let bgmPrev = 0;
 let bgmDelta = 0;
+
+let thingPassesY = (thing, y) => thing.pos.y + thingRadius < y;
 
 let processGame = () => {
   let bgmTime = bgm.x.currentTime;
   bgmDelta = bgmTime - bgmPrev;
   bgmPrev = bgmTime;
 
-  for (let thing of things) {
+  for (let i in things) {
+    let thing = things[i];
     thing.pos.y -= bgmDelta * ((80 * beats.length) / songSec);
 
     let bitmap = 0;
@@ -287,11 +291,11 @@ let processGame = () => {
         inAABB(thing.pos, area.min, area.max)
       ) {
         if (areaIndex + 1 === thing.col) {
-          score -= 1;
+          score--;
           // prettier-ignore
           zzfx(...[.3,0,164.81,.02,.2,,3,,,,10,.1,,,-1,,.05,.3,.1]); // E3
         } else {
-          score += 1;
+          score++;
 
           switch (bitmap) {
             // (10) v
@@ -325,14 +329,21 @@ let processGame = () => {
       }
     });
 
-    ctx.fillStyle = `rgba(${thing.col % 2 ? cyan : fuchsia}, .4)`;
-    ctx.beginPath();
-    ctx.arc(thing.pos.x, thing.pos.y, 39, 0, 2 * Math.PI);
-    ctx.fill();
+    if (thingPassesY(thing, 32) && !missedThing[i]) {
+      missedThing[i] = true;
+      score--;
+    }
 
-    ctx.globalAlpha = 0.8;
-    drawThing(bitmap, thing.pos.x, thing.pos.y);
-    ctx.globalAlpha = 1;
+    if (thingPassesY(thing, app.height - 80)) {
+      ctx.fillStyle = `rgba(${thing.col % 2 ? cyan : fuchsia}, .4)`;
+      ctx.beginPath();
+      ctx.arc(thing.pos.x, thing.pos.y, 39, 0, 2 * Math.PI);
+      ctx.fill();
+
+      ctx.globalAlpha = 0.8;
+      drawThing(bitmap, thing.pos.x, thing.pos.y);
+      ctx.globalAlpha = 1;
+    }
   }
 };
 
