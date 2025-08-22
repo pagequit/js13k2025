@@ -199,12 +199,26 @@ let drawThing = (dir, x, y) => {
       break;
     }
   }
-  ctx.drawImage(bastet, 2 * 16 + 4, 4, 8, 8, x, y, 50, 50);
+  ctx.drawImage(bastet, 36, 4, 8, 8, x, y, 50, 50);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
 
   ctx.translate(-40, -40);
-  ctx.drawImage(bastet, 1 * 16, 0, 16, 16, x, y, 80, 80);
+  ctx.drawImage(bastet, 16, 0, 16, 16, x, y, 80, 80);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
+};
+
+let renderButton = (pos, width, label) => {
+  ctx.drawImage(bastet, 16, 0, 8, 16, pos.x, pos.y, 40, 80);
+  ctx.drawImage(bastet, 24, 0, 8, 16, pos.x + width - 40, pos.y, 40, 80);
+
+  ctx.drawImage(bastet, 22, 0, 4, 3, pos.x + 40, pos.y, width - 80, 15);
+  ctx.drawImage(bastet, 22, 13, 4, 3, pos.x + 40, pos.y + 65, width - 80, 15);
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  drawText(label, pos.x + width / 2, pos.y + 40, 29);
+  ctx.textAlign = "start";
+  ctx.textBaseline = "alphabetic";
 };
 
 let scoreAreas = [
@@ -383,6 +397,14 @@ let then = performance.now();
 
   if (bgm.x.currentTime > songSec) {
     bgm.x.suspend();
+    renderButton(
+      {
+        x: 64,
+        y: app.height / 2 - 40,
+      },
+      app.width - 128,
+      "try again",
+    );
   }
 
   requestAnimationFrame(animate);
