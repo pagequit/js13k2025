@@ -1,6 +1,5 @@
 import getSong from "./song";
 import useZzFX from "./zzfx";
-import { svg } from "./markup";
 
 app.width = 360;
 app.height = 740;
@@ -9,14 +8,6 @@ let ctx = app.getContext("2d");
 ctx.imageSmoothingEnabled = false;
 
 let appRect = app.getBoundingClientRect();
-
-let playIcon = "M7 4v16l13-8z";
-let pauseIcon =
-  "M6 6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zm8 0a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1z";
-let [ppBtn, ppBtnContent] = svg(playIcon);
-ppBtn.style =
-  "color:white;position:absolute;bottom:0;left:0;margin:8px;padding:4px;height:4%;width:auto;border:1px solid white;border-radius:50%;";
-wrap.appendChild(ppBtn);
 
 let cyan = "117, 252, 253";
 let blue = "103, 190, 250";
@@ -46,24 +37,8 @@ let sfx = {
 let [__, zzfxP, zzfxM] = useZzFX(bgm);
 let [zzfx] = useZzFX(sfx);
 
-let buffer = zzfxM(...song);
-let node;
-
-let unPaused = !!node;
-ppBtn.addEventListener("click", () => {
-  // prettier-ignore
-  zzfx(...[.2,,61,.1,,.04,3,.4,,,150,.07,.01,,,,.12,.67]); // pause
-  if ((unPaused = !unPaused)) {
-    if (!node) {
-      node = zzfxP(...buffer);
-      node.loop = true;
-    } else {
-      bgm.x.resume(); // no need to await
-    }
-  } else {
-    bgm.x.suspend(); // no need to await
-  }
-});
+let songBuffer = zzfxM(...song);
+let songNode;
 
 let drawText = (text, x, y, size = 24, color = "white") => {
   ctx.font = size + "px monospace";
@@ -125,6 +100,36 @@ app.addEventListener("touchend", (e) => {
 });
 app.addEventListener("contextmenu", (e) => {
   e.preventDefault();
+});
+
+self.addEventListener("keydown", (e) => {
+  switch (e.key) {
+    case "ArrowUp":
+    case "w": {
+      console.log("up");
+      break;
+    }
+    case "ArrowLeft":
+    case "a": {
+      console.log("left");
+      break;
+    }
+    case "ArrowDown":
+    case "s": {
+      console.log("down");
+      break;
+    }
+    case "ArrowRight":
+    case "d": {
+      console.log("right");
+      break;
+    }
+    case "Enter":
+    case " ": {
+      console.log("select");
+      break;
+    }
+  }
 });
 
 let createEntityBuffer = (size, create) => {
@@ -234,7 +239,6 @@ let scoreAreas = [
 
 let drawScoreArea = () => {
   ctx.globalAlpha = 0.2;
-
   scoreAreas.forEach((area, index) => {
     let isTop = index != 0;
     let color = `rgb(${isTop ? cyan : fuchsia})`;
@@ -262,6 +266,11 @@ let drawScoreArea = () => {
   });
 
   ctx.globalAlpha = 1;
+  drawSprite(0, 0, -8, 50);
+  ctx.scale(-1, 1);
+  drawSprite(0, 0, -app.width - 8, 50);
+  ctx.scale(1, 1);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
 };
 
 let thingRadius = 40;
@@ -285,117 +294,104 @@ let bgmDelta = 0;
 
 let thingPassesY = (thing, y) => thing.pos.y + thingRadius < y;
 
-let processGame = () => {
-  let bgmTime = bgm.x.currentTime;
-  bgmDelta = bgmTime - bgmPrev;
-  bgmPrev = bgmTime;
+let gameState = 0;
+let process = [
+  // 0 -> "main menu"
+  () => {
+    renderButton(
+      {
+        x: 64,
+        y: app.height / 2 - 40,
+      },
+      app.width - 128,
+      "Start!",
+    );
+    if (false) {
+      // prettier-ignore
+      zzfx(...[.2,,61,.1,,.04,3,.4,,,150,.07,.01,,,,.12,.67]); // pause
+      songNode = zzfxP(...songBuffer);
+      songNode.loop = true;
+      gameState = 1;
+    }
+  },
+  // 1 -> "playing"
+  () => {
+    let bgmTime = bgm.x.currentTime;
+    bgmDelta = bgmTime - bgmPrev;
+    bgmPrev = bgmTime;
 
-  for (let i in things) {
-    let thing = things[i];
-    thing.pos.y -= bgmDelta * ((80 * beats.length) / songSec);
+    for (let i in things) {
+      let thing = things[i];
+      thing.pos.y -= bgmDelta * ((80 * beats.length) / songSec);
 
-    let bitmap = 0;
-    bitmap |= thing.pos.x > app.width / 2 ? 2 : 0;
-    bitmap |= thing.col > 1 ? 1 : 0;
+      let bitmap = 0;
+      bitmap |= thing.pos.x > app.width / 2 ? 2 : 0;
+      bitmap |= thing.col > 1 ? 1 : 0;
 
-    scoreAreas.forEach((area, areaIndex) => {
-      if (
-        isPointerDown &&
-        vecDis(pointerPos, thing.pos) <= thingRadius &&
-        inAABB(thing.pos, area.min, area.max)
-      ) {
-        if (areaIndex + 1 === thing.col) {
-          score--;
-          // prettier-ignore
-          zzfx(...[.3,0,164.81,.02,.2,,3,,,,10,.1,,,-1,,.05,.3,.1]); // E3
-        } else {
-          score += 2;
+      scoreAreas.forEach((area, areaIndex) => {
+        if (
+          isPointerDown &&
+          vecDis(pointerPos, thing.pos) <= thingRadius &&
+          inAABB(thing.pos, area.min, area.max)
+        ) {
+          if (areaIndex + 1 === thing.col) {
+            score--;
+            // prettier-ignore
+            zzfx(...[.3,0,164.81,.02,.2,,3,,,,10,.1,,,-1,,.05,.3,.1]); // E3
+          } else {
+            score += 2;
 
-          switch (bitmap) {
-            // (10) v
-            case 0: {
-              // prettier-ignore
-              zzfx(...[.2,0,415.3,.02,.2,,3,,,,10,.1,,,-1,,.05,.3,.1]); // G#4
-              break;
-            }
-            // (20) <
-            case 1: {
-              // prettier-ignore
-              zzfx(...[.2,0,277.18,.02,.2,,3,,,,10,.1,,,-1,,.05,.3,.1]); // C#4
-              break;
-            }
-            // (01) ^
-            case 2: {
-              // prettier-ignore
-              zzfx(...[.2,0,466.16,.02,.2,,3,,,,10,.1,,,-1,,.05,.3,.1]); // A#4
-              break;
-            }
-            // (02) >
-            case 3: {
-              // prettier-ignore
-              zzfx(...[.2,0,329.63,.02,.2,,3,,,,10,.1,,,-1,,.05,.3,.1]); // E4
-              break;
+            switch (bitmap) {
+              // (10) v
+              case 0: {
+                // prettier-ignore
+                zzfx(...[.2,0,415.3,.02,.2,,3,,,,10,.1,,,-1,,.05,.3,.1]); // G#4
+                break;
+              }
+              // (20) <
+              case 1: {
+                // prettier-ignore
+                zzfx(...[.2,0,277.18,.02,.2,,3,,,,10,.1,,,-1,,.05,.3,.1]); // C#4
+                break;
+              }
+              // (01) ^
+              case 2: {
+                // prettier-ignore
+                zzfx(...[.2,0,466.16,.02,.2,,3,,,,10,.1,,,-1,,.05,.3,.1]); // A#4
+                break;
+              }
+              // (02) >
+              case 3: {
+                // prettier-ignore
+                zzfx(...[.2,0,329.63,.02,.2,,3,,,,10,.1,,,-1,,.05,.3,.1]); // E4
+                break;
+              }
             }
           }
+
+          thing.pos.y -= app.height;
         }
+      });
 
-        thing.pos.y -= app.height;
+      if (thingPassesY(thing, 32) && !missedThing[i]) {
+        missedThing[i] = true;
+        score--;
       }
-    });
 
-    if (thingPassesY(thing, 32) && !missedThing[i]) {
-      missedThing[i] = true;
-      score--;
+      if (thingPassesY(thing, app.height - 80)) {
+        ctx.fillStyle = `rgba(${thing.col % 2 ? cyan : fuchsia}, .4)`;
+        ctx.beginPath();
+        ctx.arc(thing.pos.x, thing.pos.y, 39, 0, 2 * Math.PI);
+        ctx.fill();
+
+        ctx.globalAlpha = 0.8;
+        drawThing(bitmap, thing.pos.x, thing.pos.y);
+        ctx.globalAlpha = 1;
+      }
     }
-
-    if (thingPassesY(thing, app.height - 80)) {
-      ctx.fillStyle = `rgba(${thing.col % 2 ? cyan : fuchsia}, .4)`;
-      ctx.beginPath();
-      ctx.arc(thing.pos.x, thing.pos.y, 39, 0, 2 * Math.PI);
-      ctx.fill();
-
-      ctx.globalAlpha = 0.8;
-      drawThing(bitmap, thing.pos.x, thing.pos.y);
-      ctx.globalAlpha = 1;
-    }
-  }
-};
-
-let interval = 1000 / 60;
-let delta = 0;
-let then = performance.now();
-
-(function animate(timestamp) {
-  delta = timestamp - then;
-  if (delta > interval) {
-    then = timestamp - (delta % interval);
-
-    if (unPaused) {
-      ppBtnContent(pauseIcon);
-      ctx.clearRect(0, 0, app.width, app.height);
-
-      drawScoreArea();
-
-      processGame();
-
-      drawSprite(0, 0, -8, 50);
-      ctx.scale(-1, 1);
-      drawSprite(0, 0, -app.width - 8, 50);
-      ctx.scale(1, 1);
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-
-      drawSprite(1, 1, app.width / 2 - 64, app.height - 120 - 16); // cat
-
-      updatePointerParticles();
-
-      drawText("Score: " + score, 12, 20, 16);
-    } else {
-      ppBtnContent(playIcon);
-      drawText("paused", 140, 360);
-    }
-  }
-
-  if (bgm.x.currentTime > songSec) {
+  },
+  // 2 -> "game over"
+  () => {
     bgm.x.suspend();
     renderButton(
       {
@@ -405,6 +401,32 @@ let then = performance.now();
       app.width - 128,
       "try again",
     );
+  },
+];
+
+let interval = 1000 / 60;
+let delta = 0;
+let then = performance.now();
+
+(function animate(timestamp) {
+  delta = timestamp - then;
+  if (delta > interval) {
+    ctx.clearRect(0, 0, app.width, app.height);
+
+    process[gameState]();
+
+    drawScoreArea();
+
+    drawSprite(1, 1, app.width / 2 - 64, app.height - 120 - 16); // cat
+
+    updatePointerParticles();
+
+    drawText("Score: " + score, 12, 20, 16);
+    if (bgm.x.currentTime > songSec) {
+      gameState = 2;
+    }
+
+    then = timestamp - (delta % interval);
   }
 
   requestAnimationFrame(animate);
