@@ -102,31 +102,67 @@ app.addEventListener("contextmenu", (e) => {
   e.preventDefault();
 });
 
+let isUp = false;
+let isLeft = false;
+let isDown = false;
+let isRight = false;
+let isSelect = false;
+
 self.addEventListener("keydown", (e) => {
   switch (e.key) {
     case "ArrowUp":
     case "w": {
-      console.log("up");
+      isUp = true;
       break;
     }
     case "ArrowLeft":
     case "a": {
-      console.log("left");
+      isLeft = true;
       break;
     }
     case "ArrowDown":
     case "s": {
-      console.log("down");
+      isDown = true;
       break;
     }
     case "ArrowRight":
     case "d": {
-      console.log("right");
+      isRight = true;
       break;
     }
     case "Enter":
     case " ": {
-      console.log("select");
+      isSelect = true;
+      break;
+    }
+  }
+});
+
+self.addEventListener("keyup", (e) => {
+  switch (e.key) {
+    case "ArrowUp":
+    case "w": {
+      isUp = false;
+      break;
+    }
+    case "ArrowLeft":
+    case "a": {
+      isLeft = false;
+      break;
+    }
+    case "ArrowDown":
+    case "s": {
+      isDown = false;
+      break;
+    }
+    case "ArrowRight":
+    case "d": {
+      isRight = false;
+      break;
+    }
+    case "Enter":
+    case " ": {
+      isSelect = false;
       break;
     }
   }
@@ -306,7 +342,7 @@ let process = [
       app.width - 128,
       "Start!",
     );
-    if (false) {
+    if (isPointerDown || isSelect) {
       // prettier-ignore
       zzfx(...[.2,,61,.1,,.04,3,.4,,,150,.07,.01,,,,.12,.67]); // pause
       songNode = zzfxP(...songBuffer);
@@ -389,6 +425,10 @@ let process = [
         ctx.globalAlpha = 1;
       }
     }
+    if (bgm.x.currentTime > songSec) {
+      isPointerDown = false;
+      gameState = 2;
+    }
   },
   // 2 -> "game over"
   () => {
@@ -401,6 +441,9 @@ let process = [
       app.width - 128,
       "try again",
     );
+    if (isPointerDown || isSelect) {
+      location.reload();
+    }
   },
 ];
 
@@ -422,9 +465,6 @@ let then = performance.now();
     updatePointerParticles();
 
     drawText("Score: " + score, 12, 20, 16);
-    if (bgm.x.currentTime > songSec) {
-      gameState = 2;
-    }
 
     then = timestamp - (delta % interval);
   }
