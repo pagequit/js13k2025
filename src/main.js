@@ -34,7 +34,9 @@ let sfx = {
   x: new AudioContext(),
 };
 
-let [__, zzfxP, zzfxM] = useZzFX(bgm);
+bgm.x.suspend();
+
+let [_, zzfxP, zzfxM] = useZzFX(bgm);
 let [zzfx] = useZzFX(sfx);
 
 let songBuffer = zzfxM(...song);
@@ -240,6 +242,7 @@ let drawThing = (dir, x, y) => {
       break;
     }
   }
+
   ctx.drawImage(bastet, 36, 4, 8, 8, x, y, 50, 50);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
 
@@ -315,7 +318,7 @@ let things = beats.reduce((acc, cur, idx) => {
     if (ct) {
       acc.push({
         col: ct,
-        pos: vec(i * 80 + 140, idx * 80 - (ct - 1) * 80 + 152),
+        pos: vec(i * 80 + 140, idx * 80 - (ct - 1) * 80 + 192),
       });
     }
   });
@@ -343,6 +346,7 @@ let process = [
       "Start!",
     );
     if (isPointerDown || isSelect) {
+      bgm.x.resume();
       // prettier-ignore
       zzfx(...[.2,,61,.1,,.04,3,.4,,,150,.07,.01,,,,.12,.67]); // pause
       songNode = zzfxP(...songBuffer);
@@ -465,6 +469,7 @@ let then = performance.now();
     updatePointerParticles();
 
     drawText("Score: " + score, 12, 20, 16);
+    drawText("Time: " + bgm.x.currentTime.toFixed(2), 260, 20, 16);
 
     then = timestamp - (delta % interval);
   }
